@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scrmbl</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <main class="main-content">
+            <header class="chat-header">
+                <div class="room-info">
+                    <span>Room code: </span>
+                    <span id="currentRoom"># general</span>
+                    <a href="#" id="changeRoom" class="change-link">(change)</a>
+                </div>
+                <div id="userNameDisplay">
+                    <a href="#" id="userNameLink"><span id="currentUserName"></span> <i class="fas fa-pencil-alt"></i></a>
+                </div>
+            </header>
+            <div id="chatContainer">
+                <div id="chatMessages"></div>
+            </div>
+            <footer id="chatControls">
+                <div class="scramble-mode-container">
+                    <label for="scrambleMode">Style:</label>
+                    <select id="scrambleMode">
+                        <option value="silly">Silly</option>
+                        <option value="pirate">Pirate</option>
+                        <option value="professional">Professional</option>
+                        <option value="shakespeare">Shakespeare</option>
+                        <option value="no swearing">Clean</option>
+                        <option value="robot">Robot</option>
+                        <option value="baby talk">Baby Talk</option>
+                    </select>
+                </div>
+                <div class="chat-input-container">
+                    <div id="userAvatar" class="user-avatar"></div>
+                    <input type="text" id="chatInput" placeholder="Say something…">
+                    <button id="sendButton"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </footer>
+        </main>
+    </div>
+    <div id="joinRoomPopup" class="popup">
+        <div class="popup-content">
+            <h2>Join Room</h2>
+            <input type="text" id="roomCode" placeholder="Enter room code">
+            <div class="button-group">
+                <button id="joinButton">Join Room</button>
+                <button id="cancelJoinButton">Cancel</button>
+            </div>
+            <p id="validationMessage" class="validation-message"></p>
+        </div>
+    </div>
+    <div id="userNamePopup" class="popup">
+        <div class="popup-content">
+            <h2>Set Your Name</h2>
+            <input type="text" id="userName" placeholder="Enter your name">
+            <button id="updateNameButton">Set Name</button>
+            <p id="nameValidationMessage" class="validation-message"></p>
+        </div>
+    </div>
+    <div id="updateNamePopover" class="popover">
+        <input type="text" id="updateUserName" placeholder="Enter new name">
+        <button id="updateNamePopoverButton">Update Name</button>
+    </div>
+    
+    <script src="webrtc-chat-manager.js"></script>
+    <script src="chat-history-manager.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

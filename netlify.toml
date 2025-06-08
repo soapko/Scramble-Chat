@@ -1,0 +1,29 @@
+# netlify.toml — minimum viable scaffold
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"     # faster cold starts 
+  external_node_modules = ["express"]
+
+[[redirects]]
+  from = "/api/process-message"
+  to   = "/.netlify/functions/process-message"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from = "/api/webrtc-offer"
+  to   = "/.netlify/functions/webrtc-offer"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from = "/api/webrtc-answer"
+  to   = "/.netlify/functions/webrtc-answer"
+  status = 200
+  force  = true
+
+[[redirects]]
+  from = "/api/webrtc-signals/*"
+  to   = "/.netlify/functions/webrtc-signals"
+  status = 200
+  force  = true
