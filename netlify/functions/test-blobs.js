@@ -1,5 +1,6 @@
 const { getStore } = require('@netlify/blobs');
 
+// Force redeploy to pick up environment variables - 2025-06-08
 exports.handler = async (event, context) => {
   // Handle CORS
   if (event.httpMethod === 'OPTIONS') {
