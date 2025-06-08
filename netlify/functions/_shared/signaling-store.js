@@ -12,11 +12,14 @@ function getSignalingStore() {
   }
   
   try {
-    // Try manual configuration with siteID
+    // Try manual configuration with siteID and token
     const siteID = process.env.NETLIFY_SITE_ID || 'da58c02b-0367-40d6-8fc0-73da7f4d418b';
-    console.log('Attempting Blobs with siteID:', siteID);
+    const token = process.env.NETLIFY_ACCESS_TOKEN;
     
-    return getStore('webrtc-signaling', { siteID });
+    console.log('Attempting Blobs with siteID:', siteID);
+    console.log('Token available:', !!token);
+    
+    return getStore('webrtc-signaling', { siteID, token });
   } catch (error) {
     console.log('Netlify Blobs not available, using in-memory fallback:', error.message);
     useFallback = true;

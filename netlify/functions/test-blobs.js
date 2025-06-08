@@ -23,9 +23,11 @@ exports.handler = async (event, context) => {
     
     // Try to get the store with manual configuration
     const siteID = process.env.NETLIFY_SITE_ID || 'da58c02b-0367-40d6-8fc0-73da7f4d418b';
+    const token = process.env.NETLIFY_ACCESS_TOKEN;
     
     console.log('Trying with manual siteID:', siteID);
-    const store = getStore('test-store', { siteID });
+    console.log('Token available:', !!token);
+    const store = getStore('test-store', { siteID, token });
     console.log('Store created successfully');
     
     // Try to write a test blob
