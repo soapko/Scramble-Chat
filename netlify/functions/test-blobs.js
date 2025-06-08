@@ -16,9 +16,16 @@ exports.handler = async (event, context) => {
 
   try {
     console.log('Testing Netlify Blobs...');
+    console.log('Available environment variables:');
+    console.log('NETLIFY_SITE_ID:', process.env.NETLIFY_SITE_ID);
+    console.log('NETLIFY_SITE_URL:', process.env.NETLIFY_SITE_URL);
+    console.log('NETLIFY_ACCOUNT_SLUG:', process.env.NETLIFY_ACCOUNT_SLUG);
     
-    // Try to get the store
-    const store = getStore('test-store');
+    // Try to get the store with manual configuration
+    const siteID = process.env.NETLIFY_SITE_ID || 'da58c02b-0367-40d6-8fc0-73da7f4d418b';
+    
+    console.log('Trying with manual siteID:', siteID);
+    const store = getStore('test-store', { siteID });
     console.log('Store created successfully');
     
     // Try to write a test blob
