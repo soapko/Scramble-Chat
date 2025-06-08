@@ -1,9 +1,34 @@
-// Shared storage for WebRTC signaling using Netlify Blobs
+// Shared storage for WebRTC signaling with Netlify Blobs fallback to in-memory Map
 const { getStore } = require('@netlify/blobs');
 
-// Get the signaling store
+// Fallback in-memory storage when Blobs aren't available
+const fallbackStore = new Map();
+let useFallback = false;
+
+// Get the signaling store (Blobs with Map fallback)
 function getSignalingStore() {
-  return getStore('webrtc-signaling');
+  if (useFallback) {
+    return null; // Signal to use Map fallback
+  }
+  
+  try {
+    return getStore('webrtc-signaling');
+  } catch (error) {
+    console.log('Netlify Blobs not available, using in-memory fallback');
+    useFallback = true;
+    return null;
+  }
+}
+
+// Helper function to clean up old signals from Map fallback
+function cleanupOldSignalsFromMap() {
+  const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+  for (const [key, signal] of fallbackStore.entries()) {
+    if (signal.timestamp < fiveMinutesAgo) {
+      fallbackStore.delete(key);
+      console.log(`Cleaned up old signal from Map: ${key}`);
+    }
+  }
 }
 
 // Helper function to clean up old signals (older than 5 minutes)
@@ -44,17 +69,29 @@ async function storeOffer(roomId, userId, offer) {
     timestamp
   };
   
+  // Use Map fallback if Blobs not available
+  if (!store || useFallback) {
+    cleanupOldSignalsFromMap();
+    fallbackStore.set(signalKey, signal);
+    console.log(`Stored WebRTC offer (Map fallback) for room ${roomId}, user ${userId}`);
+    return signal;
+  }
+  
   try {
     await store.setJSON(signalKey, signal);
-    console.log(`Stored WebRTC offer for room ${roomId}, user ${userId}`);
+    console.log(`Stored WebRTC offer (Blobs) for room ${roomId}, user ${userId}`);
     
     // Trigger cleanup asynchronously (don't await)
     cleanupOldSignals().catch(console.error);
     
     return signal;
   } catch (error) {
-    console.error('Error storing offer:', error);
-    throw error;
+    console.log('Blobs failed, falling back to Map storage:', error.message);
+    useFallback = true;
+    cleanupOldSignalsFromMap();
+    fallbackStore.set(signalKey, signal);
+    console.log(`Stored WebRTC offer (Map fallback) for room ${roomId}, user ${userId}`);
+    return signal;
   }
 }
 
@@ -73,17 +110,29 @@ async function storeAnswer(roomId, userId, targetUserId, answer) {
     timestamp
   };
   
+  // Use Map fallback if Blobs not available
+  if (!store || useFallback) {
+    cleanupOldSignalsFromMap();
+    fallbackStore.set(signalKey, signal);
+    console.log(`Stored WebRTC answer (Map fallback) for room ${roomId}, from ${userId} to ${targetUserId}`);
+    return signal;
+  }
+  
   try {
     await store.setJSON(signalKey, signal);
-    console.log(`Stored WebRTC answer for room ${roomId}, from ${userId} to ${targetUserId}`);
+    console.log(`Stored WebRTC answer (Blobs) for room ${roomId}, from ${userId} to ${targetUserId}`);
     
     // Trigger cleanup asynchronously (don't await)
     cleanupOldSignals().catch(console.error);
     
     return signal;
   } catch (error) {
-    console.error('Error storing answer:', error);
-    throw error;
+    console.log('Blobs failed, falling back to Map storage:', error.message);
+    useFallback = true;
+    cleanupOldSignalsFromMap();
+    fallbackStore.set(signalKey, signal);
+    console.log(`Stored WebRTC answer (Map fallback) for room ${roomId}, from ${userId} to ${targetUserId}`);
+    return signal;
   }
 }
 
@@ -92,6 +141,53 @@ async function getSignals(roomId, userId) {
   const store = getSignalingStore();
   const offers = [];
   const answers = [];
+  
+  // Use Map fallback if Blobs not available
+  if (!store || useFallback) {
+    cleanupOldSignalsFromMap();
+    const keysToDelete = [];
+    
+    for (const [key, signal] of fallbackStore.entries()) {
+      const keyParts = key.split(':');
+      
+      if (keyParts.length >= 3 && keyParts[1] === roomId) {
+        const signalType = keyParts[0];
+        const signalUserId = keyParts[2];
+        
+        if (signal && signal.roomId === roomId) {
+          if (signalType === 'offer' && signalUserId !== userId) {
+            // Offers from other users that this user should see
+            offers.push({
+              fromUserId: signal.userId,
+              offer: signal.offer,
+              timestamp: signal.timestamp
+            });
+          } else if (signalType === 'answer' && keyParts.length >= 4) {
+            const targetUserId = keyParts[3];
+            if (targetUserId === userId) {
+              // Answers targeted to this user
+              answers.push({
+                fromUserId: signal.userId,
+                answer: signal.answer,
+                timestamp: signal.timestamp
+              });
+              // Mark for deletion after retrieving (one-time use)
+              keysToDelete.push(key);
+            }
+          }
+        }
+      }
+    }
+    
+    // Delete consumed answers
+    for (const key of keysToDelete) {
+      fallbackStore.delete(key);
+      console.log(`Deleted consumed answer from Map: ${key}`);
+    }
+    
+    console.log(`Retrieved (Map fallback) ${offers.length} offers and ${answers.length} answers for user ${userId} in room ${roomId}`);
+    return { offers, answers };
+  }
   
   try {
     const { blobs } = await store.list();
@@ -145,13 +241,14 @@ async function getSignals(roomId, userId) {
       }
     }
     
-    console.log(`Retrieved ${offers.length} offers and ${answers.length} answers for user ${userId} in room ${roomId}`);
+    console.log(`Retrieved (Blobs) ${offers.length} offers and ${answers.length} answers for user ${userId} in room ${roomId}`);
     
     return { offers, answers };
     
   } catch (error) {
-    console.error('Error retrieving signals:', error);
-    return { offers: [], answers: [] };
+    console.log('Blobs failed, falling back to Map storage:', error.message);
+    useFallback = true;
+    return await getSignals(roomId, userId); // Retry with Map fallback
   }
 }
 
