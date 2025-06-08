@@ -569,10 +569,3 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// Call setupChatListeners after the DOM is fully loaded
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', setupChatListeners);
-} else {
-    setupChatListeners();
-}
