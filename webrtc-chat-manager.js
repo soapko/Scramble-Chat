@@ -167,9 +167,9 @@ class WebRTCChatManager {
       console.error('Error polling for signals:', error);
     }
     
-    // Poll again in 2 seconds
+    // Poll again in 500ms for real-time messaging
     if (this.isPolling) {
-      setTimeout(() => this.pollForSignals(), 2000);
+      setTimeout(() => this.pollForSignals(), 500);
     }
   }
   
