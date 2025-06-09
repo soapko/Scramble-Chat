@@ -1,48 +1,57 @@
 const { getStore } = require('@netlify/blobs');
 
-// This is a simplified test to see if the Netlify environment
-// provides the context for Blobs automatically.
+// This function is a definitive test to see if environment variables
+// are available at runtime and can be used to connect to Blobs.
 exports.handler = async () => {
-  console.log('--- Starting Simplified Blobs Debug ---');
+  console.log('--- Starting Definitive Environment Test ---');
+
+  // Log all available environment variable keys to see what the function can access.
+  console.log('Available process.env keys:', Object.keys(process.env).join(', '));
+
+  const siteID = process.env.NETLIFY_SITE_ID;
+  const token = process.env.NETLIFY_ACCESS_TOKEN;
+
+  console.log('Value of NETLIFY_SITE_ID:', siteID ? `Exists (Length: ${siteID.length})` : 'undefined');
+  console.log('Value of NETLIFY_ACCESS_TOKEN:', token ? `Exists (Length: ${token.length})` : 'undefined');
+
+  if (!siteID || !token) {
+    const errorMessage = 'Required environment variables for Blobs are missing from process.env.';
+    console.error(errorMessage);
+    return {
+      statusCode: 500,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ success: false, error: errorMessage, available_vars: Object.keys(process.env) }),
+    };
+  }
 
   try {
-    // Relying on the Netlify environment to provide context automatically.
-    // No manual siteID or token.
-    console.log('Attempting to get store "debug-store" with automatic context...');
-    const store = getStore('debug-store');
+    console.log(`Attempting to get store "debug-store" with siteID: "${siteID}" and a token.`);
+    const store = getStore('debug-store', { siteID, token });
     console.log('getStore() call succeeded.');
 
-    const testKey = `debug-simple-${Date.now()}`;
-    await store.setJSON(testKey, { status: 'ok', timestamp: new Date().toISOString() });
-    console.log(`setJSON() with key "${testKey}" succeeded.`);
-
-    const data = await store.get(testKey, { type: 'json' });
-    console.log(`get() with key "${testKey}" succeeded. Data:`, data);
+    const testKey = `definitive-test-${Date.now()}`;
+    await store.setJSON(testKey, { status: 'ok' });
+    console.log(`setJSON() succeeded.`);
 
     await store.delete(testKey);
-    console.log(`delete() with key "${testKey}" succeeded.`);
+    console.log(`delete() succeeded.`);
 
-    console.log('--- Simplified Blobs Debug Succeeded ---');
+    console.log('--- Definitive Environment Test Succeeded ---');
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, message: 'Netlify Blobs connection is working correctly with automatic context.' }),
+      body: JSON.stringify({ success: true, message: 'Netlify Blobs connection confirmed with environment variables.' }),
     };
   } catch (error) {
-    console.error('--- Simplified Blobs Debug Failed ---');
-    console.error('Error Name:', error.name);
-    console.error('Error Message:', error.message);
-    
+    console.error('--- Definitive Environment Test Failed ---');
+    console.error('Error details:', error);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: false,
-        error: 'Failed to connect to Netlify Blobs with automatic context.',
-        details: {
-          name: error.name,
-          message: error.message,
-        },
+        error: 'Failed to connect to Netlify Blobs even with explicit credentials.',
+        details: { name: error.name, message: error.message },
       }),
     };
   }
