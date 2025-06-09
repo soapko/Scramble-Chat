@@ -2,7 +2,8 @@ import { getStore } from '@netlify/blobs';
 
 export default async (req, context) => {
   // The roomId and userId are in the path, e.g., /api/webrtc-signals/room123/user456
-  const pathParts = req.path.split('/').filter(p => p);
+  const pathname = new URL(req.url).pathname;
+  const pathParts = pathname.split('/').filter(p => p);
   const roomId = pathParts[pathParts.length - 2];
   const userId = pathParts[pathParts.length - 1];
 
