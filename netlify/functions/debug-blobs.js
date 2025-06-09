@@ -1,56 +1,40 @@
 const { getStore } = require('@netlify/blobs');
 
-// This function is a definitive test to see if environment variables
-// are available at runtime and can be used to connect to Blobs.
+// This is a hardcoded test to confirm the credentials are the only issue.
 exports.handler = async () => {
-  console.log('--- Starting Definitive Environment Test ---');
+  console.log('--- Starting Hardcoded Credentials Test ---');
 
-  // Log all available environment variable keys to see what the function can access.
-  console.log('Available process.env keys:', Object.keys(process.env).join(', '));
+  const siteID = 'da58c02b-0367-40d6-8fc0-73da7f4d418b';
+  const token = 'nfp_A2VqK6bYNWwEJ2WoAfptm2jegWMA3s25b969';
 
-  const siteID = process.env.NETLIFY_SITE_ID;
-  const token = process.env.NETLIFY_ACCESS_TOKEN;
-
-  console.log('Value of NETLIFY_SITE_ID:', siteID ? `Exists (Length: ${siteID.length})` : 'undefined');
-  console.log('Value of NETLIFY_ACCESS_TOKEN:', token ? `Exists (Length: ${token.length})` : 'undefined');
-
-  if (!siteID || !token) {
-    const errorMessage = 'Required environment variables for Blobs are missing from process.env.';
-    console.error(errorMessage);
-    return {
-      statusCode: 500,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: false, error: errorMessage, available_vars: Object.keys(process.env) }),
-    };
-  }
+  console.log('Using hardcoded siteID and token.');
 
   try {
-    console.log(`Attempting to get store "debug-store" with siteID: "${siteID}" and a token.`);
     const store = getStore('debug-store', { siteID, token });
     console.log('getStore() call succeeded.');
 
-    const testKey = `definitive-test-${Date.now()}`;
+    const testKey = `hardcoded-test-${Date.now()}`;
     await store.setJSON(testKey, { status: 'ok' });
     console.log(`setJSON() succeeded.`);
 
     await store.delete(testKey);
     console.log(`delete() succeeded.`);
 
-    console.log('--- Definitive Environment Test Succeeded ---');
+    console.log('--- Hardcoded Credentials Test Succeeded ---');
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, message: 'Netlify Blobs connection confirmed with environment variables.' }),
+      body: JSON.stringify({ success: true, message: 'Netlify Blobs connection confirmed with hardcoded credentials.' }),
     };
   } catch (error) {
-    console.error('--- Definitive Environment Test Failed ---');
+    console.error('--- Hardcoded Credentials Test Failed ---');
     console.error('Error details:', error);
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         success: false,
-        error: 'Failed to connect to Netlify Blobs even with explicit credentials.',
+        error: 'Failed to connect to Netlify Blobs even with hardcoded credentials.',
         details: { name: error.name, message: error.message },
       }),
     };
