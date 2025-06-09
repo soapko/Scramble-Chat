@@ -14,7 +14,7 @@ exports.handler = async (event, context) => {
   }
 
   try {
-    // Get the store inside the handler
+    // Get the store inside the handler, relying on the runtime environment
     const store = getStore('webrtc-signaling');
     const offers = [];
     const answers = [];
