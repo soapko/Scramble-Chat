@@ -1,4 +1,22 @@
-const { storeOffer } = require('./_shared/signaling-store');
+const { getStore } = require('@netlify/blobs');
+
+// --- Inlined Blob Storage Logic ---
+const siteID = 'da58c02b-0367-40d6-8fc0-73da7f4d418b';
+const token = 'nfp_A2VqK6bYNWwEJ2WoAfptm2jegWMA3s25b969';
+
+function getSignalingStore() {
+  return getStore('webrtc-signaling', { siteID, token });
+}
+
+async function storeOffer(roomId, userId, offer) {
+  const store = getSignalingStore();
+  const timestamp = Date.now();
+  const signalKey = `offer:${roomId}:${userId}:${timestamp}`;
+  const signal = { type: 'offer', roomId, userId, offer, timestamp };
+  await store.setJSON(signalKey, signal);
+  return signal;
+}
+// --- End Inlined Logic ---
 
 exports.handler = async (event, context) => {
   // Handle CORS preflight requests
@@ -42,7 +60,7 @@ exports.handler = async (event, context) => {
       };
     }
 
-    // Store the offer using shared store
+    // Store the offer using the inlined function
     await storeOffer(roomId, userId, offer);
 
     return {
@@ -68,6 +86,7 @@ exports.handler = async (event, context) => {
       },
       body: JSON.stringify({ 
         error: 'Failed to store offer',
+        details: { name: error.name, message: error.message },
         success: false
       })
     };
