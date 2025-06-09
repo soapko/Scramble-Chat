@@ -1,9 +1,11 @@
 const { getStore } = require('@netlify/blobs');
 
-// This simplified version relies on the build process to provision the store.
-// The "webrtc-signaling" store is created by the build script.
+// Hardcoding credentials as a last resort to match the library's requirement.
+const siteID = 'da58c02b-0367-40d6-8fc0-73da7f4d418b';
+const token = 'nfp_A2VqK6bYNWwEJ2WoAfptm2jegWMA3s25b969';
+
 function getSignalingStore() {
-  return getStore('webrtc-signaling');
+  return getStore('webrtc-signaling', { siteID, token });
 }
 
 // Helper function to clean up old signals (older than 5 minutes)
