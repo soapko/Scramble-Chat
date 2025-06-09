@@ -1,75 +1,40 @@
-const { storeAnswer } = require('./_shared/signaling-store');
+import { getStore } from '@netlify/blobs';
 
-exports.handler = async (event, context) => {
-  // Handle CORS preflight requests
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      },
-      body: ''
-    };
-  }
-
-  // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+export default async (req, context) => {
+  // Ensure the request is a POST request
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
   }
 
   try {
-    // Parse request body
-    const { roomId, userId, answer, targetUserId } = JSON.parse(event.body);
+    const { roomId, userId, targetUserId, answer } = await req.json();
 
     // Validate input
-    if (!roomId || !userId || !answer || !targetUserId) {
-      return {
-        statusCode: 400,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ error: 'Missing required fields: roomId, userId, answer, targetUserId' })
-      };
+    if (!roomId || !userId || !targetUserId || !answer) {
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Store the answer using shared store
-    await storeAnswer(roomId, userId, targetUserId, answer);
+    // Get the store inside the handler
+    const store = getStore('webrtc-signaling');
+    const timestamp = Date.now();
+    const signalKey = `answer:${roomId}:${userId}:${targetUserId}:${timestamp}`;
+    const signal = { type: 'answer', roomId, userId, targetUserId, answer, timestamp };
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 
-        success: true,
-        message: 'Answer stored successfully'
-      })
-    };
+    await store.setJSON(signalKey, signal);
+
+    return new Response(JSON.stringify({ success: true, message: 'Answer stored successfully' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
     console.error('Error storing WebRTC answer:', error);
-
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ 
-        error: 'Failed to store answer',
-        success: false
-      })
-    };
+    return new Response(JSON.stringify({ error: 'Failed to store answer', details: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
   }
 };

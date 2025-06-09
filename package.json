@@ -20,6 +20,7 @@
   "description": "AI-powered chat application that transforms messages through LLM processing",
   "dependencies": {
     "@netlify/blobs": "^9.1.6",
+    "@netlify/functions": "^4.1.4",
     "dotenv": "^16.0.3",
     "express": "^4.19.2",
     "openai": "^4.57.0",
