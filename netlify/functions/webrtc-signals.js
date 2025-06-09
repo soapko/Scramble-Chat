@@ -1,20 +1,20 @@
-import { getStore } from '@netlify/blobs';
+const { getStore } = require('@netlify/blobs');
 
-export default async (req, context) => {
+exports.handler = async (event, context) => {
   // The roomId and userId are in the path, e.g., /api/webrtc-signals/room123/user456
-  const pathname = new URL(req.url).pathname;
-  const pathParts = pathname.split('/').filter(p => p);
+  const pathParts = event.path.split('/').filter(p => p);
   const roomId = pathParts[pathParts.length - 2];
   const userId = pathParts[pathParts.length - 1];
 
   if (!roomId || !userId) {
-    return new Response(JSON.stringify({ error: 'Missing roomId or userId in path' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return {
+      statusCode: 400,
+      body: JSON.stringify({ error: 'Missing roomId or userId in path' })
+    };
   }
 
   try {
+    // Get the store inside the handler
     const store = getStore('webrtc-signaling');
     const offers = [];
     const answers = [];
@@ -44,16 +44,18 @@ export default async (req, context) => {
       await store.delete(key);
     }
 
-    return new Response(JSON.stringify({ offers, answers }), {
-      status: 200,
+    return {
+      statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
-    });
+      body: JSON.stringify({ offers, answers })
+    };
 
   } catch (error) {
     console.error('Error retrieving WebRTC signals:', error);
-    return new Response(JSON.stringify({ error: 'Failed to retrieve signals', details: error.message }), {
-      status: 500,
+    return {
+      statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-    });
+      body: JSON.stringify({ error: 'Failed to retrieve signals', details: error.message })
+    };
   }
 };
