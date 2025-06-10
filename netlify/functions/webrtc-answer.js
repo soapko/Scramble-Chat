@@ -1,57 +1,41 @@
-const { getStore } = require('@netlify/blobs');
+import { NetlifyDB } from '@netlify/sdk';
 
-exports.handler = async (event, context) => {
-  // Handle CORS preflight requests
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      },
-      body: ''
-    };
-  }
-
-  // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+export default async (req, context) => {
+  // Ensure the request is a POST request
+  if (req.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
   }
 
   try {
-    const { roomId, userId, targetUserId, answer } = JSON.parse(event.body);
+    const { roomId, userId, targetUserId, answer } = await req.json();
 
+    // Validate input
     if (!roomId || !userId || !targetUserId || !answer) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Missing required fields' })
-      };
+      return new Response(JSON.stringify({ error: 'Missing required fields' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
 
-    // Get the store inside the handler, relying on the runtime environment
-    const store = getStore('webrtc-signaling');
+    // Initialize Netlify DB
+    const db = new NetlifyDB();
     const timestamp = Date.now();
     const signalKey = `answer:${roomId}:${userId}:${targetUserId}:${timestamp}`;
     const signal = { type: 'answer', roomId, userId, targetUserId, answer, timestamp };
 
-    await store.setJSON(signalKey, signal);
+    // Use db.set instead of store.setJSON
+    await db.set(signalKey, signal);
 
-    return {
-      statusCode: 200,
+    return new Response(JSON.stringify({ success: true, message: 'Answer stored successfully' }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ success: true, message: 'Answer stored successfully' })
-    };
+    });
 
   } catch (error) {
     console.error('Error storing WebRTC answer:', error);
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({ error: 'Failed to store answer', details: error.message }), {
+      status: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'Failed to store answer', details: error.message })
-    };
+    });
   }
 };
